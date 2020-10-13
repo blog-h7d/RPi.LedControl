@@ -27,10 +27,10 @@ class ColorConverter(werkzeug.routing.BaseConverter):
     app = None
 
     def to_python(self, value: str) -> calculator.ColorRGBX:
-        return value.split(".")
+        return list(map(int, value.split(".")))
 
     def to_url(self, obj: calculator.ColorRGBX) -> str:
-        return ".".join(obj)
+        return ".".join(map(str, obj))
 
 
 app.url_map.converters['color'] = ColorConverter
