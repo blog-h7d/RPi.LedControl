@@ -67,7 +67,7 @@ class Area:
                     for i in range(strip['start'], strip['end'], 1 if strip['start'] < strip['end'] else -1):
                         strip['strip'].setPixelColor(i, neopixel.Color(*self.calculator._data[start]))
                         start += 1
-                strip['strip'].show()
+                    strip['strip'].show()
             else:
                 start += abs(strip['start'] - strip['end'])
 
