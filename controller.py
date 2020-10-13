@@ -103,7 +103,7 @@ def _init_areas():
             if len(s) == 3:
                 strip = available_strips[s[2]]
                 if strip:
-                    area_obj.add_strip(s[0], s[1], strip)
+                    area_obj.add_strip(s[0], s[1], available_strips[s[2]]['strip'])
 
         available_areas[ad['name']] = area_obj
 
