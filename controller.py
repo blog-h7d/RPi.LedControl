@@ -1,9 +1,8 @@
 import asyncio
 import json
+import quart
 import sys
 import typing
-
-import quart
 import werkzeug.routing
 
 import area
@@ -103,7 +102,7 @@ def _init_areas():
             if len(s) == 3:
                 strip = available_strips[s[2]]
                 if strip:
-                    area_obj.add_strip(s[0], s[1], available_strips[s[2]]['strip'])
+                    area_obj.add_strip(s[0], s[1], available_strips[s[2]])
 
         available_areas[ad['name']] = area_obj
 
@@ -116,6 +115,12 @@ def convert_to_dict(obj):
             if not callable(value):
                 obj_dict[key] = value
     return obj_dict
+
+
+@app.route('/')
+async def get_rich_client():
+    #return f'test', 200
+    return await app.send_static_file('index.html')
 
 
 @app.route('/api/')
@@ -142,13 +147,13 @@ async def get_api():
 
 @app.route('/areas/')
 async def get_areas():
-    return json.dumps(available_areas, default=convert_to_dict), 200, {
+    return json.dumps(list(available_areas.values()), default=convert_to_dict), 200, {
         'Content-Type': 'application/json; charset=utf-8'}
 
 
 @app.route('/strips/')
 async def get_strips():
-    return json.dumps(available_strips, default=convert_to_dict), 200, {
+    return json.dumps(list(available_strips.values()), default=convert_to_dict), 200, {
         'Content-Type': 'application/json; charset=utf-8'}
 
 

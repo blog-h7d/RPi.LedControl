@@ -14,7 +14,8 @@ class Area:
         self.mode = 0
         self.name = name
         self.calculator = None
-        self._strips = list()
+        self.length = 0
+        self.strips = list()
         self._isActive = False
 
     def add_strip(self, start: int, end: int, strip=None):
@@ -33,7 +34,9 @@ class Area:
             'strip': strip
         }
 
-        self._strips.append(strip)
+        self.length += abs(end-start)
+
+        self.strips.append(strip)
 
     async def set_mode(self, mode, color1, color2):
         if not color1:
@@ -62,14 +65,15 @@ class Area:
     async def _update_strips(self):
         while self._isActive and self.mode > 0 and self.calculator:
             start = 0
-            for strip in self._strips:
-                if strip['strip']:
-                    for i in range(strip['start'], strip['end'], 1 if strip['start'] < strip['end'] else -1):
-                        strip['strip'].setPixelColor(i, neopixel.Color(*self.calculator._data[start]))
+            for strip_data in self.strips:
+                if strip_data['strip']:
+                    s = strip_data['strip']
+                    for i in range(strip_data['start'], strip_data['end'], 1 if strip_data['start'] < strip_data['end'] else -1):
+                        s['strip'].setPixelColor(i, neopixel.Color(*self.calculator._data[start]))
                         start += 1
-                    strip['strip'].show()
+                    s['strip'].show()
             else:
-                start += abs(strip['start'] - strip['end'])
+                start += abs(strip_data['start'] - strip_data['end'])
 
             await asyncio.sleep(0.2)
 
@@ -80,6 +84,6 @@ class Area:
 
     def get_number_of_pixel(self):
         num_of_pixel = 0
-        for strip in self._strips:
+        for strip in self.strips:
             num_of_pixel += abs(strip['start'] - strip['end'])
         return num_of_pixel

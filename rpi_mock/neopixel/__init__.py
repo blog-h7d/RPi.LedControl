@@ -12,3 +12,9 @@ class NeoPixel:
 
     def begin(self):
         pass
+
+    def setPixelColor(self, *args, **kwargs):
+        pass
+
+    def show(self):
+        pass
