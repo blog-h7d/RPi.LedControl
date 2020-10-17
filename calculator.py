@@ -65,3 +65,17 @@ class ColorWipe(CalculatorBase):
             await asyncio.sleep(0.2)
 
         self._isRunning = False
+
+
+class TestCounter(CalculatorBase):
+    name = "test"
+
+    def __init__(self, length: int):
+        super().__init__(length)
+
+    async def _calculate(self):
+        self._data = [CalculatorBase.BLACK] * self.length
+        for i in range(0, self.length / 10):
+            self.data[i * 10] = (0, 0, 255, 0)
+        for i in range(0, self.length / 100):
+            self.data[i * 100] = (255, 0, 0, 0)
