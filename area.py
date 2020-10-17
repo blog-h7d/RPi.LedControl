@@ -42,7 +42,7 @@ class Area:
         if not color2:
             color2 = (0, 0, 255, 0)
 
-        if 0 <= mode < 3:
+        if 0 <= mode < 10:
             self.mode = mode
             if self.calculator and self._isActive:
                 await self.calculator.stop()
