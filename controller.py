@@ -127,6 +127,7 @@ async def get_api():
             'run (Color red)': quart.request.url_root[:-4] + 'run/' + a.name + '/1/',
             'run (ColorWipe red)': quart.request.url_root[:-4] + 'run/' + a.name + '/2/',
             'run (ColorWipe blue)': quart.request.url_root[:-4] + 'run/' + a.name + '/2/0.0.255.0/',
+            'run (test)': quart.request.url_root[:-4] + 'run/' + a.name + '/3/',
         }
         area_command.append(command)
 
@@ -185,14 +186,29 @@ async def switch_light_off():
     }), 200, {'Content-Type': 'application/json; charset=utf-8'}
 
 
+do_update = False
+
+
+async def _update_strips():
+    global do_update
+
+    do_update = True
+    while do_update:
+        for strip in strips_data:
+            strip['strip'].show()
+            await asyncio.sleep(0.2)
+
+
 @app.route('/run/<area_name>/<int:mode>/')
 @app.route('/run/<area_name>/<int:mode>/<color:color1>/')
 @app.route('/run/<area_name>/<int:mode>/<color:color1>/<color:color2>')
 async def run_area(area_name, mode, color1: calculator.ColorRGBX = None, color2: calculator.ColorRGBX = None):
     global available_areas
+    global do_update
 
     if area_name in available_areas:
-        if mode > 0:
+        if mode > 0 and not do_update:
+            asyncio.create_task(_update_strips())
             for strip in strips_data:
                 RPi.GPIO.output(strip['power_gpio'], RPi.GPIO.HIGH)
                 await asyncio.sleep(1)
@@ -204,6 +220,7 @@ async def run_area(area_name, mode, color1: calculator.ColorRGBX = None, color2:
             for strip in strips_data:
                 RPi.GPIO.output(strip['power_gpio'], RPi.GPIO.LOW)
                 await asyncio.sleep(1)
+            do_update = False
 
         return json.dumps({
             'successful': True,
