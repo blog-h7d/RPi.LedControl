@@ -85,4 +85,4 @@ class TestCounter(CalculatorBase):
                 self._data[i * 100] = (255, 0, 0, 0)
 
             act_pos = (act_pos + 1) % 10
-            asyncio.sleep(1)
+            await asyncio.sleep(1)
