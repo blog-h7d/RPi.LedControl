@@ -4,6 +4,7 @@ import typing
 
 ColorRGBX = typing.NewType("ColorRGBX", (int, int, int, int))
 
+
 class CalculatorBase:
     name = ""
     BLACK: ColorRGBX = (0, 0, 0, 0)
@@ -74,8 +75,14 @@ class TestCounter(CalculatorBase):
         super().__init__(length)
 
     async def _calculate(self):
-        self._data = [CalculatorBase.BLACK] * self.length
-        for i in range(0, self.length / 10):
-            self.data[i * 10] = (0, 0, 255, 0)
-        for i in range(0, self.length / 100):
-            self.data[i * 100] = (255, 0, 0, 0)
+        act_pos = 0
+        while self._isActive:
+            self._data = [CalculatorBase.BLACK] * self.length
+            for i in range(0, self.length // 10):
+                self._data[i * 10] = (0, 0, 255, 0)
+                self._data[i * 10 + act_pos] = (0, 255, 0, 0)
+            for i in range(0, self.length // 100):
+                self._data[i * 100] = (255, 0, 0, 0)
+
+            act_pos = (act_pos + 1) % 10
+            asyncio.sleep(1)
