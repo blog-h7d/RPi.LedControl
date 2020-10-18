@@ -58,6 +58,9 @@ class Area:
             if mode == 3:
                 self.calculator = calculator.TestCounter(self.get_number_of_pixel())
                 self._isActive = True
+            if mode == 4:
+                self.calculator = calculator.FireCalc(self.get_number_of_pixel())
+                self._isActive = True
 
             if self.calculator and self._isActive:
                 await self.calculator.start()

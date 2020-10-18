@@ -128,6 +128,7 @@ async def get_api():
             'run (ColorWipe red)': quart.request.url_root[:-4] + 'run/' + a.name + '/2/',
             'run (ColorWipe blue)': quart.request.url_root[:-4] + 'run/' + a.name + '/2/0.0.255.0/',
             'run (test)': quart.request.url_root[:-4] + 'run/' + a.name + '/3/',
+            'run (fire)': quart.request.url_root[:-4] + 'run/' + a.name + '/4/',
         }
         area_command.append(command)
 
