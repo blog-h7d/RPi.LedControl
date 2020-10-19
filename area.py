@@ -16,7 +16,7 @@ class Area:
         self.calculator = None
         self.length = 0
         self.strips = list()
-        self._isActive = False
+        self.isActive = False
 
     def add_strip(self, start: int, end: int, strip=None):
         if start < 0:
@@ -52,30 +52,30 @@ class Area:
             color2 = calculator.Color(0, 0, 255, 0)
 
         self.mode = mode
-        if self.calculator and self._isActive:
+        if self.calculator and self.isActive:
             await self.calculator.stop()
 
-        self._isActive = False
+        self.isActive = False
 
         if mode != "black":
             calculator_class = self._get_calculator(mode)
             if calculator_class:
                 if calculator_class.number_of_colors == 0:
                     self.calculator = calculator_class(self.get_number_of_pixel())
-                    self._isActive = True
+                    self.isActive = True
                 if calculator_class.number_of_colors == 1:
                     self.calculator = calculator_class(self.get_number_of_pixel(), color1)
-                    self._isActive = True
+                    self.isActive = True
                 if calculator_class.number_of_colors == 2:
                     self.calculator = calculator_class(self.get_number_of_pixel(), color1, color2)
-                    self._isActive = True
+                    self.isActive = True
 
-        if self.calculator and self._isActive:
+        if self.calculator and self.isActive:
             await self.calculator.start()
             asyncio.create_task(self._update_strips())
 
     async def _update_strips(self):
-        while self._isActive and self.mode != "black" and self.calculator:
+        while self.isActive and self.mode != "black" and self.calculator:
             start = 0
             for strip_data in self.strips:
                 if strip_data['strip']:
@@ -96,7 +96,7 @@ class Area:
                     strip['strip'].setPixelColor(i, neopixel.Color(0, 0, 0, 0))
 
     async def stop(self):
-        self._isActive = False
+        self.isActive = False
         if self.calculator:
             await self.calculator.stop()
 

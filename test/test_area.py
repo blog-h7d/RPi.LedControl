@@ -5,7 +5,7 @@ def test_area_init():
     a = area.Area("Name")
     assert a.name == "Name"
     assert a.mode == "black"
-    assert not a._isActive
+    assert not a.isActive
 
 
 def test_area_get_number_of_pixel():

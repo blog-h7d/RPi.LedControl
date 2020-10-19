@@ -1,7 +1,7 @@
 import asyncio
 import json
-import sys
 import typing
+import sys
 
 import quart
 import werkzeug.routing
@@ -147,6 +147,29 @@ async def get_api():
 @app.route('/areas/')
 async def get_areas():
     return json.dumps(list(available_areas.values()), default=convert_to_dict), 200, {
+        'Content-Type': 'application/json; charset=utf-8'}
+
+
+@app.route('/area/<string:name>/data_hex/')
+async def get_data_hex_of_area(name):
+    if name not in available_areas:
+        return b'Area ' + name.encode() + b' not found', 404
+
+    if not available_areas[name].isActive:
+        return json.dumps([x.hex_color_string for x in [calculator.CalculatorBase.BLACK] * available_areas[name].length], default=convert_to_dict), 200, {
+            'Content-Type': 'application/json; charset=utf-8'}
+
+    area_obj = available_areas[name]
+    return json.dumps([x.hex_color_string for x in area_obj.calculator.data], default=convert_to_dict), 200, {
+        'Content-Type': 'application/json; charset=utf-8'}
+
+
+@app.route('/area/<string:name>/')
+async def get_area(name):
+    if name not in available_areas:
+        return b'Area ' + name.encode() + b' not found', 404
+
+    return json.dumps(available_areas[name], default=convert_to_dict), 200, {
         'Content-Type': 'application/json; charset=utf-8'}
 
 

@@ -21,8 +21,8 @@ class Color:
         return f'{str(self.red)}.{str(self.green)}.{str(self.blue)}.{str(self.white)}'
 
     @property
-    def percentage_white_string(self) -> float:
-        return self.white / 255
+    def percentage_white_value(self) -> float:
+        return self.white / 255.0
 
     @property
     def strip_value(self) -> int:
@@ -111,10 +111,10 @@ class TestCounter(CalculatorBase):
         while self._isActive:
             self.data = [CalculatorBase.BLACK] * self.length
             for i in range(0, self.length // 10):
-                self.data[i * 10] = Color(0, 0, 255, 0)
-                self.data[i * 10 + act_pos] = Color(0, 255, 0, 0)
+                self.data[i * 10] = Color(blue=255)
+                self.data[i * 10 + act_pos] = Color(green=255)
             for i in range(0, self.length // 100):
-                self.data[i * 100] = Color(255, 0, 0, 0)
+                self.data[i * 100] = Color(red=255)
 
             act_pos = (act_pos + 1) % 10
             await asyncio.sleep(1)
