@@ -45,21 +45,28 @@ class Area:
         if not color2:
             color2 = (0, 0, 255, 0)
 
-        if 0 <= mode < 3:
+        if 0 <= mode < 10:
             self.mode = mode
-            self._isActive = False
-            if self.calculator:
+            if self.calculator and self._isActive:
                 await self.calculator.stop()
-                self.calculator = None
+
+            self._isActive = False
 
             if mode == 1:  # ColorWipe
                 self.calculator = calculator.OneColorCalculator(self.get_number_of_pixel(), color1)
+                self._isActive = True
             if mode == 2:
                 self.calculator = calculator.ColorWipe(self.get_number_of_pixel(), color1)
-
-            if self.calculator:
-                await self.calculator.start()
                 self._isActive = True
+            if mode == 3:
+                self.calculator = calculator.TestCounter(self.get_number_of_pixel())
+                self._isActive = True
+            if mode == 4:
+                self.calculator = calculator.FireCalc(self.get_number_of_pixel())
+                self._isActive = True
+
+            if self.calculator and self._isActive:
+                await self.calculator.start()
                 asyncio.create_task(self._update_strips())
 
     async def _update_strips(self):
@@ -76,6 +83,11 @@ class Area:
                 start += abs(strip_data['start'] - strip_data['end'])
 
             await asyncio.sleep(0.2)
+
+        for strip in self._strips:
+            if strip['strip']:
+                for i in range(strip['start'], strip['end'], 1 if strip['start'] < strip['end'] else -1):
+                    strip['strip'].setPixelColor(i, neopixel.Color(0, 0, 0, 0))
 
     async def stop(self):
         self._isActive = False
