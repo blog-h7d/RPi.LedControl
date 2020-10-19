@@ -1,7 +1,7 @@
 import asyncio
 import json
-import sys
 import typing
+import sys
 
 import quart
 import werkzeug.routing
@@ -26,11 +26,11 @@ app.secret_key = "LedController_ChangeThisKeyForInstallation"
 class ColorConverter(werkzeug.routing.BaseConverter):
     app = None
 
-    def to_python(self, value: str) -> calculator.ColorRGBX:
-        return list(map(int, value.split(".")))
+    def to_python(self, value: str) -> calculator.Color:
+        return calculator.ColorColor(*value.split("."))
 
-    def to_url(self, obj: calculator.ColorRGBX) -> str:
-        return ".".join(map(str, obj))
+    def to_url(self, obj: calculator.Color) -> str:
+        return obj.url_string
 
 
 app.url_map.converters['color'] = ColorConverter
@@ -103,7 +103,7 @@ def _init_areas():
             if len(s) == 3:
                 strip = available_strips[s[2]]
                 if strip:
-                    area_obj.add_strip(s[0], s[1], available_strips[s[2]]['strip'])
+                    area_obj.add_strip(s[0], s[1], available_strips[s[2]])
 
         available_areas[ad['name']] = area_obj
 
@@ -118,17 +118,20 @@ def convert_to_dict(obj):
     return obj_dict
 
 
+@app.route('/')
+async def get_rich_client():
+    # return f'test', 200
+    return await app.send_static_file('index.html')
+
+
 @app.route('/api/')
 async def get_api():
     area_command = list()
     for a in available_areas.values():  # type: area.Area
-        command = {
-            'run (switch off)': quart.request.url_root[:-4] + 'run/' + a.name + '/0/',
-            'run (Color red)': quart.request.url_root[:-4] + 'run/' + a.name + '/1/',
-            'run (ColorWipe red)': quart.request.url_root[:-4] + 'run/' + a.name + '/2/',
-            'run (ColorWipe blue)': quart.request.url_root[:-4] + 'run/' + a.name + '/2/0.0.255.0/',
-            'run (test)': quart.request.url_root[:-4] + 'run/' + a.name + '/3/',
-        }
+        command = dict()
+        command['run (switch off)'] = quart.request.url_root[:-4] + 'run/' + a.name + '/black/'
+        for calc in calculator.CalculatorBase.__subclasses__():
+            command[f'run ({calc.name})'] = f'{quart.request.url_root[:-4]}run/{a.name}/{calc.name}/'
         area_command.append(command)
 
     return json.dumps({
@@ -143,13 +146,36 @@ async def get_api():
 
 @app.route('/areas/')
 async def get_areas():
-    return json.dumps(available_areas, default=convert_to_dict), 200, {
+    return json.dumps(list(available_areas.values()), default=convert_to_dict), 200, {
+        'Content-Type': 'application/json; charset=utf-8'}
+
+
+@app.route('/area/<string:name>/data_hex/')
+async def get_data_hex_of_area(name):
+    if name not in available_areas:
+        return b'Area ' + name.encode() + b' not found', 404
+
+    if not available_areas[name].isActive:
+        return json.dumps([x.hex_color_string for x in [calculator.CalculatorBase.BLACK] * available_areas[name].length], default=convert_to_dict), 200, {
+            'Content-Type': 'application/json; charset=utf-8'}
+
+    area_obj = available_areas[name]
+    return json.dumps([x.hex_color_string for x in area_obj.calculator.data], default=convert_to_dict), 200, {
+        'Content-Type': 'application/json; charset=utf-8'}
+
+
+@app.route('/area/<string:name>/')
+async def get_area(name):
+    if name not in available_areas:
+        return b'Area ' + name.encode() + b' not found', 404
+
+    return json.dumps(available_areas[name], default=convert_to_dict), 200, {
         'Content-Type': 'application/json; charset=utf-8'}
 
 
 @app.route('/strips/')
 async def get_strips():
-    return json.dumps(available_strips, default=convert_to_dict), 200, {
+    return json.dumps(list(available_strips.values()), default=convert_to_dict), 200, {
         'Content-Type': 'application/json; charset=utf-8'}
 
 
@@ -207,7 +233,7 @@ async def run_area(area_name, mode, color1: calculator.ColorRGBX = None, color2:
     global do_update
 
     if area_name in available_areas:
-        if mode > 0 and not do_update:
+        if mode != "black" and not do_update:
             asyncio.create_task(_update_strips())
             for strip in strips_data:
                 RPi.GPIO.output(strip['power_gpio'], RPi.GPIO.HIGH)
@@ -216,7 +242,7 @@ async def run_area(area_name, mode, color1: calculator.ColorRGBX = None, color2:
         a = available_areas[area_name]
         await a.set_mode(mode, color1, color2)
 
-        if all(x.mode == 0 for x in available_areas.values()):
+        if all(x.mode == "black" for x in available_areas.values()):
             for strip in strips_data:
                 RPi.GPIO.output(strip['power_gpio'], RPi.GPIO.LOW)
                 await asyncio.sleep(1)
