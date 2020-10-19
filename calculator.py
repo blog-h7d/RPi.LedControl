@@ -129,12 +129,16 @@ class FireCalc(CalculatorBase):
         self.number_of_random = length // 20
 
     async def _calculate(self):
-        self._data = [CalculatorBase.BLACK] * self.length
+        self.data = [CalculatorBase.BLACK] * self.length
+        for i in range(2*self.number_of_random):
+            index = random.randrange(0, self.length, 1)
+            self.data[index] = Color(red=min(self.data[index].red + 200, 255),
+                                     green=min(self.data[index].green + 80, 255))
         while self._isActive:
             for i in range(self.number_of_random):
-                index = random.randrange(self.length)
-                self.data[index].red = min(self.data[index].red + 100, 255)
-                self.data[index].green = min(self.data[index].green + 60, 255)
+                index = random.randrange(0, self.length, 1)
+                self.data[index] = Color(red=min(self.data[index].red + 200, 255),
+                                         green=min(self.data[index].green + 80, 255))
 
             old_colors = self.data
             for i in range(self.length):
@@ -142,8 +146,8 @@ class FireCalc(CalculatorBase):
                 right = old_colors[(i + 1) % self.length]
                 left = old_colors[(i - 1) % self.length]
                 self.data[i] = Color(
-                    red=max(right.red // 6 + act.red * 2 // 3 + left.red // 6 - 2, 0),
-                    green=max(right.green // 6 + act.green * 2 // 3 + left.green // 6 - 5, 0)
+                    red=max(right.red // 6 + act.red * 2 // 3 + left.red // 6 - 6, 0),
+                    green=max(right.green // 12 + act.green * 5 // 6 + left.green // 12 - 4, 0)
                 )
 
-            await asyncio.sleep(1)
+            await asyncio.sleep(0.5)
