@@ -38,7 +38,7 @@ async def test_run_area(client):
     controller._init_strips()
     controller._init_areas()
 
-    response = await client.get('/run/default/1/')
+    response = await client.get('/run/default/fire/')
     print(await response.get_data())
     assert response.status_code == 200
 

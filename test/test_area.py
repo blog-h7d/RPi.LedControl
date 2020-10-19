@@ -4,7 +4,7 @@ import area
 def test_area_init():
     a = area.Area("Name")
     assert a.name == "Name"
-    assert a.mode == 0
+    assert a.mode == "black"
     assert not a._isActive
 
 

@@ -11,7 +11,7 @@ import calculator
 class Area:
 
     def __init__(self, name: str):
-        self.mode = 0
+        self.mode: str = "black"
         self.name = name
         self.calculator = None
         self.length = 0
@@ -34,49 +34,55 @@ class Area:
             'strip': strip
         }
 
-        self.length += abs(end-start)
+        self.length += abs(end - start)
 
         self.strips.append(strip)
 
-    async def set_mode(self, mode, color1, color2):
+    @staticmethod
+    def _get_calculator(name: str) -> type:
+        for calculator_class in calculator.CalculatorBase.__subclasses__():
+            if calculator_class.name == name:
+                return calculator_class
+
+    async def set_mode(self, mode: str, color1: calculator.Color = None, color2: calculator.Color = None):
         if not color1:
-            color1 = (255, 0, 0, 0)
+            color1 = calculator.Color(255, 0, 0, 0)
 
         if not color2:
-            color2 = (0, 0, 255, 0)
+            color2 = calculator.Color(0, 0, 255, 0)
 
-        if 0 <= mode < 10:
-            self.mode = mode
-            if self.calculator and self._isActive:
-                await self.calculator.stop()
+        self.mode = mode
+        if self.calculator and self._isActive:
+            await self.calculator.stop()
 
-            self._isActive = False
+        self._isActive = False
 
-            if mode == 1:  # ColorWipe
-                self.calculator = calculator.OneColorCalculator(self.get_number_of_pixel(), color1)
-                self._isActive = True
-            if mode == 2:
-                self.calculator = calculator.ColorWipe(self.get_number_of_pixel(), color1)
-                self._isActive = True
-            if mode == 3:
-                self.calculator = calculator.TestCounter(self.get_number_of_pixel())
-                self._isActive = True
-            if mode == 4:
-                self.calculator = calculator.FireCalc(self.get_number_of_pixel())
-                self._isActive = True
+        if mode != "black":
+            calculator_class = self._get_calculator(mode)
+            if calculator_class:
+                if calculator_class.number_of_colors == 0:
+                    self.calculator = calculator_class(self.get_number_of_pixel())
+                    self._isActive = True
+                if calculator_class.number_of_colors == 1:
+                    self.calculator = calculator_class(self.get_number_of_pixel(), color1)
+                    self._isActive = True
+                if calculator_class.number_of_colors == 2:
+                    self.calculator = calculator_class(self.get_number_of_pixel(), color1, color2)
+                    self._isActive = True
 
-            if self.calculator and self._isActive:
-                await self.calculator.start()
-                asyncio.create_task(self._update_strips())
+        if self.calculator and self._isActive:
+            await self.calculator.start()
+            asyncio.create_task(self._update_strips())
 
     async def _update_strips(self):
-        while self._isActive and self.mode > 0 and self.calculator:
+        while self._isActive and self.mode != "black" and self.calculator:
             start = 0
             for strip_data in self.strips:
                 if strip_data['strip']:
                     s = strip_data['strip']
-                    for i in range(strip_data['start'], strip_data['end'], 1 if strip_data['start'] < strip_data['end'] else -1):
-                        s['strip'].setPixelColor(i, neopixel.Color(*self.calculator._data[start]))
+                    for i in range(strip_data['start'], strip_data['end'],
+                                   1 if strip_data['start'] < strip_data['end'] else -1):
+                        s['strip'].setPixelColor(i, self.calculator.data[start].strip_value)
                         start += 1
                     s['strip'].show()
             else:
