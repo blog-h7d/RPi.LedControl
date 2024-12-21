@@ -26,7 +26,7 @@ except ModuleNotFoundError:
     from rpi_mock import board
 
 app = quart.Quart("LED Controller", static_url_path='')
-app.secret_key = "LedController_ChangeThisKeyForInstallation"
+app.secret_key = "LedController_ChangeThisKeyForInstallation."
 
 
 class ColorConverter(werkzeug.routing.BaseConverter):

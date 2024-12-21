@@ -34,7 +34,7 @@ class CalculatorBase:
         while self._is_running:
             await asyncio.sleep(0.1)
 
-        self._data = [[0,0,0,0] for _ in range(self.length)]
+        self._data = [self.black for _ in range(self.length)]
         await asyncio.sleep(0.5)
 
     async def _calculate(self):
@@ -62,15 +62,14 @@ class ColorWipe(CalculatorBase):
 
     async def _calculate(self):
         act_pos = 0
-        self._isRunning = True
+        self._is_running = True
         while self._is_active and act_pos < self.length:
-            self._data = [self.color] * self.actPos + [CalculatorBase.black] * (self.length - self.actPos)
+            self._data = [self.color] * act_pos + [self.black] * (self.length - act_pos)
             act_pos += 1
 
             await asyncio.sleep(0.2)
 
-        self._isRunning = False
-
+        self._is_running = False
 
 class TestCounter(CalculatorBase):
     name = "test"
@@ -81,7 +80,7 @@ class TestCounter(CalculatorBase):
     async def _calculate(self):
         act_pos = 0
         while self._is_active:
-            self._data = [CalculatorBase.black] * self.length
+            self._data = [self.black] * self.length
             for i in range(0, self.length // 10):
                 self._data[i * 10] = [0, 0, 255, 0]
                 self._data[i * 10 + act_pos] = [0, 255, 0, 0]
@@ -97,8 +96,8 @@ class FireCalc(CalculatorBase):
 
     def __init__(self, length: int):
         super().__init__(length)
-        self.number_of_random = length // 20
-        self.cycle_time = 0.3
+        self.number_of_random = length // 25
+        self.cycle_time = 0.2
 
     def _set_color(self, number, add_red: int, add_green: int, add_blue: int = 0):
         for index in random.sample(range(self.length), k=number):
@@ -112,11 +111,11 @@ class FireCalc(CalculatorBase):
         self._set_color(self.number_of_random, 40, 4, 0)
 
         while self._is_active:
-            await asyncio.gather(self._update_color(), asyncio.sleep(self.cycle_time))
+            await asyncio.gather(asyncio.sleep(self.cycle_time), self._update_color())
 
     async def _update_color(self):
-        self._set_color(self.number_of_random, 20, 0, 0)
-        self._set_color(self.number_of_random // 2, 20, 10, 0)
+        self._set_color(self.number_of_random // 2, 25, 0, 0)
+        self._set_color(self.number_of_random, 25, 10, 10)
         self._set_color(self.number_of_random // 2, 20, 20, 0)
 
         old_colors = copy.copy(self._data)
@@ -125,8 +124,8 @@ class FireCalc(CalculatorBase):
             right = old_colors[(i + 1) % self.length]
             left = old_colors[(i - 1) % self.length]
             self._data[i] = [
-                max(right[0] // 4 + act[0] // 2 + left[0] // 4 - 1, 0),
-                max(right[1] // 4 + act[1] // 2 + left[1] // 4 - 4, 0),
-                max(right[2] // 4 + act[2] // 2 + left[2] // 4 - 8, 0),
+                max(right[0] // 6 + act[0] * 2 // 3 + left[0] // 6 - 2, 0),
+                max(right[1] // 6 + act[1] * 2 // 3 + left[1] // 6 - 4, 0),
+                max(right[2] // 6 + act[2] * 2 // 3 + left[2] // 6 - 6, 0),
                 0
             ]

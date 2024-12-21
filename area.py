@@ -67,9 +67,11 @@ class Area:
     def _set_color(self, strip: neopixel.NeoPixel, start, end, colors: list):
         strip[start:end] = colors
 
-
     async def _update_strips(self):
         async def update():
+            if not self.calculator:
+                return
+
             data = self.calculator.data
             start = 0
             for act_strip in self._strips:
@@ -78,12 +80,16 @@ class Area:
                     if act_strip['start'] < act_strip['end']:
                         self._set_color(np, act_strip['start'], act_strip['end'], data[start: start + length])
                     else:
-                        self._set_color(np, act_strip['end'], act_strip['start'], data[start: start + length])
+                        self._set_color(np, act_strip['end'], act_strip['start'], data[start + length: start:-1])
                     start += length
-                    np.show()
+                    try:
+                        np.show()
+                    except Exception as e:
+                        print("Catched exception for show")
+                        print(e)
 
         while self._isActive and self.mode > 0 and self.calculator:
-            await asyncio.gather(update(), asyncio.sleep(0.1))
+            await asyncio.gather(asyncio.sleep(0.1), update())
 
         for strip in self._strips:
             if np := strip['strip']:
