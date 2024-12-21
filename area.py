@@ -14,10 +14,10 @@ class Area:
         self.mode = 0
         self.name = name
         self.calculator = None
-        self._strips = list()
+        self._strips: list = []
         self._isActive = False
 
-    def add_strip(self, start: int, end: int, strip=None):
+    def add_strip(self, start: int, end: int, strip: neopixel.NeoPixel | None = None):
         if start < 0:
             raise ValueError("Start must be >= 0")
 
@@ -27,13 +27,11 @@ class Area:
         if start == end:
             raise ValueError("Start and end must be different")
 
-        strip = {
+        self._strips.append({
             'start': start,
             'end': end,
             'strip': strip
-        }
-
-        self._strips.append(strip)
+        })
 
     async def set_mode(self, mode, color1, color2):
         if not color1:
@@ -66,24 +64,31 @@ class Area:
                 await self.calculator.start()
                 asyncio.create_task(self._update_strips())
 
-    async def _update_strips(self):
-        while self._isActive and self.mode > 0 and self.calculator:
-            start = 0
-            for strip in self._strips:
-                if strip['strip']:
-                    for i in range(strip['start'], strip['end'], 1 if strip['start'] < strip['end'] else -1):
-                        strip['strip'].setPixelColor(i, neopixel.Color(*self.calculator._data[start]))
-                        start += 1
-                    strip['strip'].show()
-            else:
-                start += abs(strip['start'] - strip['end'])
+    def _set_color(self, strip: neopixel.NeoPixel, start, end, colors: list):
+        strip[start:end] = colors
 
-            await asyncio.sleep(0.2)
+
+    async def _update_strips(self):
+        async def update():
+            data = self.calculator.data
+            start = 0
+            for act_strip in self._strips:
+                if np := act_strip['strip']:
+                    length = abs(act_strip['end'] - act_strip['start'])
+                    if act_strip['start'] < act_strip['end']:
+                        self._set_color(np, act_strip['start'], act_strip['end'], data[start: start + length])
+                    else:
+                        self._set_color(np, act_strip['end'], act_strip['start'], data[start: start + length])
+                    start += length
+                    np.show()
+
+        while self._isActive and self.mode > 0 and self.calculator:
+            await asyncio.gather(update(), asyncio.sleep(0.1))
 
         for strip in self._strips:
-            if strip['strip']:
-                for i in range(strip['start'], strip['end'], 1 if strip['start'] < strip['end'] else -1):
-                    strip['strip'].setPixelColor(i, neopixel.Color(0, 0, 0, 0))
+            if np := strip['strip']:
+                self._set_color(np, min(strip['start'], strip['end']), max(strip['start'], strip['end']),
+                                (0, 0, 0, 0) * abs(strip['end'] - strip['start']))
 
     async def stop(self):
         self._isActive = False

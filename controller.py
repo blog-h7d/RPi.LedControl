@@ -2,6 +2,7 @@ import asyncio
 import json
 import sys
 import typing
+from datetime import datetime
 
 import quart
 import werkzeug.routing
@@ -18,6 +19,11 @@ try:
     import RPi.GPIO
 except ModuleNotFoundError:
     from rpi_mock import RPi
+
+try:
+    import board
+except ModuleNotFoundError:
+    from rpi_mock import board
 
 app = quart.Quart("LED Controller", static_url_path='')
 app.secret_key = "LedController_ChangeThisKeyForInstallation"
@@ -82,13 +88,14 @@ async def _stop_server():
 def _init_strips():
     global available_strips
     for strip_data in strips_data:
-        if strip_data['id'] not in available_strips:
-            strip = neopixel.NeoPixel(strip_data['count'], strip_data['gpio'], strip_data['freq'], strip_data['dma'],
-                                      strip_data['invert'], strip_data['brightness'], strip_data['channel'],
-                                      eval(strip_data['type']))
-            strip.begin()
-            available_strips[strip_data['id']] = strip_data
-            available_strips[strip_data['id']]['strip'] = strip
+        if (strip_id := strip_data['id']) not in available_strips:
+            gpio = eval(strip_data['gpio'])
+            strip = neopixel.NeoPixel(gpio, strip_data['count'],
+                                      brightness=strip_data['brightness'], auto_write=False,
+                                      pixel_order=eval(strip_data['type']), channel=strip_data['channel'])
+
+            available_strips[strip_id] = strip_data
+            available_strips[strip_id]['strip'] = strip
 
 
 def _init_areas():
@@ -165,7 +172,7 @@ async def get_calculator(name):
     if name in available_areas:
         return json.dumps(available_areas[name],
                           default=convert_to_dict), 200, {
-                   'Content-Type': 'application/json; charset=utf-8'}
+            'Content-Type': 'application/json; charset=utf-8'}
     return b'Area ' + name.encode() + b' not found', 404
 
 
@@ -197,7 +204,7 @@ async def _update_strips():
     while do_update:
         for strip in strips_data:
             strip['strip'].show()
-            await asyncio.sleep(0.2)
+        await asyncio.sleep(0.01)
 
 
 @app.route('/run/<area_name>/<int:mode>/')
