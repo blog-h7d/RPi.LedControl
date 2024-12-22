@@ -15,7 +15,7 @@ class Area:
         self.name = name
         self.calculator = None
         self._strips: list = []
-        self._isActive = False
+        self._is_active = False
 
     def add_strip(self, start: int, end: int, strip: neopixel.NeoPixel | None = None):
         if start < 0:
@@ -42,25 +42,28 @@ class Area:
 
         if 0 <= mode < 10:
             self.mode = mode
-            if self.calculator and self._isActive:
+            if self.calculator and self._is_active:
                 await self.calculator.stop()
 
-            self._isActive = False
+            self._is_active = False
+            match mode:
+                case 1:  # ColorWipe
+                    self.calculator = calculator.OneColorCalculator(self.get_number_of_pixel(), color1)
+                    self._is_active = True
+                case 2:
+                    self.calculator = calculator.ColorWipe(self.get_number_of_pixel(), color1)
+                    self._is_active = True
+                case 3:
+                    self.calculator = calculator.TestCounter(self.get_number_of_pixel())
+                    self._is_active = True
+                case 4:
+                    self.calculator = calculator.FireCalc(self.get_number_of_pixel())
+                    self._is_active = True
+                case 5:
+                    self.calculator = calculator.PartyCalc(self.get_number_of_pixel())
+                    self._is_active = True
 
-            if mode == 1:  # ColorWipe
-                self.calculator = calculator.OneColorCalculator(self.get_number_of_pixel(), color1)
-                self._isActive = True
-            if mode == 2:
-                self.calculator = calculator.ColorWipe(self.get_number_of_pixel(), color1)
-                self._isActive = True
-            if mode == 3:
-                self.calculator = calculator.TestCounter(self.get_number_of_pixel())
-                self._isActive = True
-            if mode == 4:
-                self.calculator = calculator.FireCalc(self.get_number_of_pixel())
-                self._isActive = True
-
-            if self.calculator and self._isActive:
+            if self.calculator and self._is_active:
                 await self.calculator.start()
                 asyncio.create_task(self._update_strips())
 
@@ -85,7 +88,7 @@ class Area:
                     start += length
                     np.show()
 
-        while self._isActive and self.mode > 0 and self.calculator:
+        while self._is_active and self.mode > 0 and self.calculator:
             await asyncio.gather(asyncio.sleep(0.1), update())
 
         for strip in self._strips:
@@ -96,7 +99,7 @@ class Area:
                                 (0, 0, 0, 0) * abs(strip['end'] - strip['start']))
 
     async def stop(self):
-        self._isActive = False
+        self._is_active = False
         if self.calculator:
             await self.calculator.stop()
 

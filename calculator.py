@@ -1,8 +1,10 @@
 import asyncio
 import copy
+import itertools
 import random
 
 import typing
+from unittest import case
 
 ColorRGBX = typing.NewType("ColorRGBX", (int, int, int, int))
 
@@ -59,17 +61,21 @@ class ColorWipe(CalculatorBase):
     def __init__(self, length: int, color: ColorRGBX):
         super().__init__(length)
         self.color: ColorRGBX = color
+        self.active_length = length // 10
 
     async def _calculate(self):
         act_pos = 0
         self._is_running = True
-        while self._is_active and act_pos < self.length:
-            self._data = [self.color] * act_pos + [self.black] * (self.length - act_pos)
-            act_pos += 1
+        while self._is_active:
+            start_black = max(0, act_pos + self.active_length - self.length)
+            self._data = [self.color] * start_black + \
+                         [self.black] * (start_black + act_pos) + \
+                         [self.color] * (self.active_length - start_black) + \
+                         [self.black] * (self.length - (self.active_length + act_pos))
 
-            await asyncio.sleep(0.2)
+            act_pos = (act_pos + 1) % self.length
 
-        self._is_running = False
+            await asyncio.sleep(0.1)
 
 
 class TestCounter(CalculatorBase):
@@ -131,3 +137,51 @@ class FireCalc(CalculatorBase):
                 max(right[2] // 6 + act[2] * 2 // 3 + left[2] // 6 - 10, 0),
                 max(right[3] // 6 + act[3] * 2 // 3 + left[3] // 6 - 15, 0),
             ]
+
+
+class PartyCalc(CalculatorBase):
+    name = "party"
+
+    def __init__(self, length: int):
+        super().__init__(length)
+        self.spots = [[0, 0] for _ in range(length // 10 + 1)]
+        self.cycle_time = 0.1
+
+    def _get_color(self, color_code: int) -> ColorRGBX:
+        match color_code:
+            case 0:
+                return self.black
+            case 1:
+                return 255, 0, 0, 0
+            case 2:
+                return 0, 255, 0, 0
+            case 3:
+                return 0, 0, 255, 0
+            case 4:
+                return 255, 0, 255, 0
+            case 5:
+                return 255, 255, 0, 0
+            case 6:
+                return 255, 128, 0, 0
+            case 7:
+                return 0, 128, 255, 0
+
+        return self.black
+
+    async def _calculate(self):
+        self._data = [[0, 0, 0, 0] for _ in range(self.length)]
+
+        while self._is_active:
+            await asyncio.gather(asyncio.sleep(self.cycle_time), self._update_color())
+
+    async def _update_color(self):
+        for spot in self.spots:
+            if spot[1] <= 0:
+                spot[0] = random.randint(0, 12)
+                spot[1] = random.randint(10, 30)
+            spot[1] = spot[1] - 1
+
+        self._data = list(itertools.chain(
+            *[[self._get_color(spot[0])] * 10 for spot in self.spots]
+        ))[0:self.length]
+        print(len(self.spots), len(self._data), self.length)
