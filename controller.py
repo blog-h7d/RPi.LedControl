@@ -199,6 +199,8 @@ do_update = False
 
 async def _update_strips():
     global do_update
+    if do_update:
+        return
 
     do_update = True
     while do_update:
@@ -215,14 +217,12 @@ async def run_area(area_name, mode, color1: calculator.ColorRGBX = None, color2:
     global do_update
 
     if area_name in available_areas:
-        if mode > 0 and not do_update:
-            asyncio.create_task(_update_strips())
-            for strip in strips_data:
-                RPi.GPIO.output(strip['power_gpio'], RPi.GPIO.HIGH)
-                await asyncio.sleep(1)
-
         a = available_areas[area_name]
         await a.set_mode(mode, color1, color2)
+
+        if any(x.mode > 0 for x in available_areas.values()):
+            asyncio.create_task(_update_strips())
+            await _switch_relais_on()
 
         if all(x.mode == 0 for x in available_areas.values()):
             for strip in strips_data:
@@ -236,6 +236,13 @@ async def run_area(area_name, mode, color1: calculator.ColorRGBX = None, color2:
         }), 200, {'Content-Type': 'application/json; charset=utf-8'}
 
     return b'Area ' + area_name.encode() + b' not found', 404
+
+
+async def _switch_relais_on():
+    for strip in strips_data:
+        if not RPi.GPIO.input(strip['power_gpio']):
+            RPi.GPIO.output(strip['power_gpio'], RPi.GPIO.HIGH)
+            await asyncio.sleep(1)
 
 
 if __name__ == "__main__":

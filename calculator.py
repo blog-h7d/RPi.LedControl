@@ -71,6 +71,7 @@ class ColorWipe(CalculatorBase):
 
         self._is_running = False
 
+
 class TestCounter(CalculatorBase):
     name = "test"
 
@@ -97,13 +98,14 @@ class FireCalc(CalculatorBase):
     def __init__(self, length: int):
         super().__init__(length)
         self.number_of_random = length // 25
-        self.cycle_time = 0.2
+        self.cycle_time = 0.1
 
-    def _set_color(self, number, add_red: int, add_green: int, add_blue: int = 0):
+    def _set_color(self, number, add_red: int, add_green: int, add_blue: int = 0, add_white: int = 0):
         for index in random.sample(range(self.length), k=number):
             self._data[index][0] = min(self._data[index][0] + add_red, 255)
             self._data[index][1] = min(self._data[index][1] + add_green, 255)
             self._data[index][2] = min(self._data[index][2] + add_blue, 255)
+            self._data[index][3] = min(self._data[index][3] + add_white, 255)
 
     async def _calculate(self):
         self._data = [[0, 0, 0, 0] for _ in range(self.length)]
@@ -114,9 +116,9 @@ class FireCalc(CalculatorBase):
             await asyncio.gather(asyncio.sleep(self.cycle_time), self._update_color())
 
     async def _update_color(self):
-        self._set_color(self.number_of_random // 2, 25, 0, 0)
-        self._set_color(self.number_of_random, 25, 10, 10)
-        self._set_color(self.number_of_random // 2, 20, 20, 0)
+        self._set_color(self.number_of_random // 2, 60, 10, 0, 20)
+        self._set_color(self.number_of_random, 50, 20, 10)
+        self._set_color(self.number_of_random // 2, 50, 25, 0, 10)
 
         old_colors = copy.copy(self._data)
         for i in range(self.length):
@@ -124,8 +126,8 @@ class FireCalc(CalculatorBase):
             right = old_colors[(i + 1) % self.length]
             left = old_colors[(i - 1) % self.length]
             self._data[i] = [
-                max(right[0] // 6 + act[0] * 2 // 3 + left[0] // 6 - 2, 0),
-                max(right[1] // 6 + act[1] * 2 // 3 + left[1] // 6 - 4, 0),
-                max(right[2] // 6 + act[2] * 2 // 3 + left[2] // 6 - 6, 0),
-                0
+                max(right[0] // 6 + act[0] * 2 // 3 + left[0] // 6 - 5, 0),
+                max(right[1] // 6 + act[1] * 2 // 3 + left[1] // 6 - 8, 0),
+                max(right[2] // 6 + act[2] * 2 // 3 + left[2] // 6 - 10, 0),
+                max(right[3] // 6 + act[3] * 2 // 3 + left[3] // 6 - 15, 0),
             ]

@@ -80,20 +80,19 @@ class Area:
                     if act_strip['start'] < act_strip['end']:
                         self._set_color(np, act_strip['start'], act_strip['end'], data[start: start + length])
                     else:
-                        self._set_color(np, act_strip['end'], act_strip['start'], data[start + length: start:-1])
+                        self._set_color(np, act_strip['end'], act_strip['start'],
+                                        data[start + length - 1: start - 1:-1])
                     start += length
-                    try:
-                        np.show()
-                    except Exception as e:
-                        print("Catched exception for show")
-                        print(e)
+                    np.show()
 
         while self._isActive and self.mode > 0 and self.calculator:
             await asyncio.gather(asyncio.sleep(0.1), update())
 
         for strip in self._strips:
             if np := strip['strip']:
-                self._set_color(np, min(strip['start'], strip['end']), max(strip['start'], strip['end']),
+                self._set_color(np,
+                                min(strip['start'], strip['end']),
+                                max(strip['start'], strip['end']),
                                 (0, 0, 0, 0) * abs(strip['end'] - strip['start']))
 
     async def stop(self):
